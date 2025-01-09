@@ -7,6 +7,7 @@ import CryptoDetails from '@/pages/CryptoDetails';
 import Account from '@/pages/Account';
 import SignIn from '@/pages/SignIn';
 import SignUp from '@/pages/SignUp';
+import Terms from '@/pages/Terms';
 
 export default function App() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
             <Route path="/account" element={<Account />} />
             <Route path="/signin" element={<SignIn />} />
             <Route path="/signup" element={<SignUp />} />
+            <Route path="/terms" element={<Terms />} />
           </Routes>
         </div>
       </Router>
