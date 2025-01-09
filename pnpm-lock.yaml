@@ -4738,7 +4738,6 @@ snapshots:
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
-      - debug
       - tailwindcss
 
   vite@5.4.11(@types/node@22.10.5):
