@@ -28,11 +28,13 @@ export default function SignIn() {
         localStorage.setItem('authToken', 'your-token'); // Stocker un jeton
         localStorage.setItem('userPseudo', data.pseudo); // Stocker le pseudo
         localStorage.setItem('userEmail', email); // Stocker l'email
+        window.dispatchEvent(new Event("authChanged")); // Lever un événement global
         alert(`Connexion réussie !`);
         navigate('/account');
-    } else {
+      } else {
         alert(data.error);
       }
+
     } catch (error) {
       console.error('Erreur lors de la connexion :', error);
       alert('Une erreur est survenue. Veuillez réessayer.');
