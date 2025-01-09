@@ -2,7 +2,15 @@
     {
         "email": "test@test.fr",
         "password": "test",
-        "iban": "FR9632283489657548891582",
+        "pseudo": "Test",
+        "iban": "FR2140488305421777918918",
+        "balance": 1009016216
+    },
+    {
+        "email": "azerty@azerty.fr",
+        "password": "azerty",
+        "pseudo": "Azerty",
+        "iban": "FR1250323897011263170785",
         "balance": 0
     }
 ]
