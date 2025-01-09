@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Wallet, History, Settings } from 'lucide-react';
+import { Wallet, History, Settings, ArrowDownToLine, ArrowUpToLine } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -238,12 +238,9 @@ export default function Account() {
 
   return (
       <div className="container py-6">
-        <h1 className="text-3xl font-bold mb-6">Bonjour {pseudo} !</h1>
+        <h1 className="text-3xl font-bold mb-16 ">Bonjour {pseudo} !</h1>
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">Mon Compte</h1>
-          <Button variant="outline" onClick={handleLogout}>
-            Déconnexion
-          </Button>
         </div>
 
         <Tabs defaultValue="wallet" className="space-y-4">
@@ -281,10 +278,12 @@ export default function Account() {
                   <CardTitle>Actions rapides</CardTitle>
                 </CardHeader>
                 <CardContent className="flex gap-4">
-                  <Button variant="outline" onClick={() => setIsDepositModalOpen(true)}>
+                  <Button variant="outline" onClick={() => setIsDepositModalOpen(true)} className="flex items-center gap-2">
+                    <ArrowDownToLine className="h-4 w-4 text-green-500" />
                     Dépôt
                   </Button>
-                  <Button variant="outline" onClick={() => setIsWithdrawModalOpen(true)}>
+                  <Button variant="outline" onClick={() => setIsWithdrawModalOpen(true)} className="flex items-center gap-2">
+                    <ArrowUpToLine className="h-4 w-4 text-red-500" />
                     Retrait
                   </Button>
                 </CardContent>
