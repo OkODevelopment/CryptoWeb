@@ -1,7 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowRight, TrendingUp, Shield, Zap, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import {
+  ArrowRight,
+  TrendingUp,
+  Shield,
+  Zap,
+  ArrowUpRight,
+  ArrowDownRight,
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 type Crypto = {
@@ -18,18 +25,76 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Position réelle de la souris
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  // Position animée pour le cercle
+  const [animatedPosition, setAnimatedPosition] = useState({ x: 0, y: 0 });
+
+  // -------------------------------
+  // 1. Définir une clé pour le localStorage
+  // -------------------------------
+  const LOCAL_STORAGE_KEY = 'cryptos_data';
+  // (facultatif) Durée de vie du cache : 5 minutes, par exemple
+  const CACHE_DURATION = 1 * 60 * 1000; // 5 minutes en ms
+
   useEffect(() => {
+    // Écoute du mouvement de la souris
+    const handleMouseMove = (event: MouseEvent) => {
+      setMousePosition({ x: event.clientX, y: event.clientY });
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, []);
+
+  useEffect(() => {
+    // Animation de suivi (smooth follow)
+    const smoothFollow = () => {
+      setAnimatedPosition((prev) => ({
+        x: prev.x + (mousePosition.x - prev.x) * 0.2,
+        y: prev.y + (mousePosition.y - prev.y) * 0.2,
+      }));
+    };
+    const animationFrame = requestAnimationFrame(smoothFollow);
+    return () => cancelAnimationFrame(animationFrame);
+  }, [mousePosition]);
+
+  useEffect(() => {
+    // -------------------------------
+    // 2. Vérifier si des données sont en cache
+    // -------------------------------
     const fetchCryptos = async () => {
       try {
+        const storedValue = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (storedValue) {
+          const { data, timestamp } = JSON.parse(storedValue);
+          if (Date.now() - timestamp < CACHE_DURATION) {
+            console.log('Données chargées depuis le cache localStorage:', data);
+            setCryptos(data);
+            setIsLoading(false);
+            return;
+          }
+        }
+    
+        console.log('Appel à l\'API pour mettre à jour les données...');
         const response = await fetch(
-            'https://cors-anywhere.herokuapp.com/https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=10&page=1&sparkline=false'
+          'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=10&page=1&sparkline=false'
         );
         if (!response.ok) {
           throw new Error('Échec de récupération des données');
         }
         const data = await response.json();
+        console.log('Données mises à jour depuis l\'API:', data);
         setCryptos(data);
+    
+        localStorage.setItem(
+          LOCAL_STORAGE_KEY,
+          JSON.stringify({ data, timestamp: Date.now() })
+        );
       } catch (err: any) {
+        console.error('Erreur lors de la récupération des données:', err.message);
         setError(err.message || 'Une erreur est survenue');
       } finally {
         setIsLoading(false);
@@ -49,13 +114,28 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen">
+      <div
+        className="pointer-events-none fixed w-12 h-12 bg-white rounded-full blur-lg opacity-40"
+        style={{
+          transform: `translate(${animatedPosition.x - 24}px, ${
+            animatedPosition.y - 80
+          }px)`,
+          transition: 'transform 0.05s linear',
+        }}
+      ></div>
+
       {/* Section d'introduction */}
-      <section className="py-12 text-center px-4">
+      <section className="py-12 text-center px-4 relative">
+        {/* Effet de rond blanc flou */}
+        <div className="absolute inset-0 flex justify-center items-center -z-2">
+          <div className="w-96 h-96 bg-white rounded-full blur-3xl opacity-20"></div>
+        </div>
         <h1 className="text-4xl font-bold mb-4">
           La plateforme de trading crypto la plus fiable
         </h1>
         <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
-          Achetez, vendez et échangez des cryptomonnaies en toute sécurité. Rejoignez des millions d'utilisateurs qui nous font confiance.
+          Achetez, vendez et échangez des cryptomonnaies en toute sécurité. Rejoignez des millions d'utilisateurs qui
+          nous font confiance.
         </p>
         <Button size="lg" className="gap-2">
           Commencer maintenant <ArrowRight className="h-4 w-4" />
@@ -159,4 +239,3 @@ export default function Home() {
     </div>
   );
 }
-
