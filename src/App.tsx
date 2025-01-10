@@ -9,6 +9,9 @@ import Account from '@/pages/Account';
 import SignIn from '@/pages/SignIn';
 import SignUp from '@/pages/SignUp';
 import Terms from '@/pages/Terms';
+import Footer from './components/Footer';
+import Apropos from './pages/Apropos';
+import Contact from './pages/Contact';
 
 export default function App() {
   return (
@@ -25,8 +28,11 @@ export default function App() {
             <Route path="/signin" element={<SignIn />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/terms" element={<Terms />} />
+            <Route path="/about" element={<Apropos />}/>
+            <Route path="/contact" element={<Contact />}/>
           </Routes>
         </div>
+          <Footer />
       </Router>
     </ThemeProvider>
   );
