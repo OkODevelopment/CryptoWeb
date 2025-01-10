@@ -21,7 +21,7 @@ type Crypto = {
 };
 
 export default function Home() {
-  const [cryptos, setCryptos] = useState<Crypto[]>([]);
+  const [cryptos, setCryptos] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,10 +38,10 @@ export default function Home() {
   const CACHE_DURATION = 1 * 60 * 1000; // 5 minutes en ms
 
   useEffect(() => {
-    // Écoute du mouvement de la souris
     const handleMouseMove = (event: MouseEvent) => {
       setMousePosition({ x: event.clientX, y: event.clientY });
     };
+
     window.addEventListener('mousemove', handleMouseMove);
 
     return () => {
@@ -112,6 +112,7 @@ export default function Home() {
     return <div className="text-center py-12 text-red-500">Erreur : {error}</div>;
   }
 
+
   return (
     <div className="flex flex-col min-h-screen">
       <div
@@ -179,63 +180,129 @@ export default function Home() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
+=======
+      <div className="flex flex-col min-h-screen">
+        <div
+            className="pointer-events-none fixed w-12 h-12 bg-white rounded-full blur-lg opacity-40"
+            style={{
+              transform: `translate(${animatedPosition.x - 24}px, ${animatedPosition.y - 80}px)`, // Ajuste la hauteur (-28 au lieu de -24)
+              transition: 'transform 0.05s linear', // Adoucit les mouvements
+            }}
+        ></div>
+
+        {/* Section d'introduction */}
+        <section className="py-12 text-center px-4 relative">
+          {/* Effet de rond blanc flou */}
+          <div className="absolute inset-0 flex justify-center items-center -z-2">
+            <div className="w-96 h-96 bg-white rounded-full blur-3xl opacity-20"></div>
+          </div>
+          <h1 className="text-4xl font-bold mb-4">
+            La plateforme de trading crypto la plus fiable
+          </h1>
+          <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
+            Achetez, vendez et échangez des cryptomonnaies en toute sécurité. Rejoignez des millions d'utilisateurs qui
+            nous font confiance.
+          </p>
+          <Button size="lg" className="gap-2">
+            Commencer maintenant <ArrowRight className="h-4 w-4"/>
+          </Button>
+        </section>
+
+
+        {/* Section des avantages */}
+        <section className="container grid md:grid-cols-3 gap-6 py-12">
+          <Card>
+            <CardContent className="pt-6">
+              <TrendingUp className="h-12 w-12 mb-4"/>
+              <h3 className="text-lg font-semibold mb-2">Trading avancé</h3>
+              <p className="text-muted-foreground">
+                Outils professionnels et graphiques en temps réel
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <Shield className="h-12 w-12 mb-4"/>
+              <h3 className="text-lg font-semibold mb-2">Sécurité maximale</h3>
+              <p className="text-muted-foreground">
+                Protection de vos actifs avec une sécurité de niveau institutionnel
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <Zap className="h-12 w-12 mb-4"/>
+              <h3 className="text-lg font-semibold mb-2">Exécution rapide</h3>
+              <p className="text-muted-foreground">
+                Transactions instantanées et support 24/7
+              </p>
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* Section des cryptomonnaies */}
+        <section className="container py-12">
+          <h2 className="text-2xl font-bold mb-6">Marché des cryptomonnaies</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
               <tr className="border-b border-border">
                 <th className="text-left py-4 px-4">Crypto</th>
                 <th className="text-right py-4 px-4">Prix</th>
                 <th className="text-right py-4 px-4">24h %</th>
               </tr>
-            </thead>
-            <tbody>
+              </thead>
+              <tbody>
               {cryptos.map((crypto) => (
-                <tr
-                  key={crypto.id}
-                  className="border-b border-border hover:bg-muted/50 transition-colors"
-                >
-                  <td className="py-4 px-4">
-                    <Link
-                      to={`/crypto/${crypto.id}`}
-                      className="flex items-center gap-3 hover:text-primary"
-                    >
-                      <img
-                        src={crypto.image}
-                        alt={crypto.name}
-                        className="w-8 h-8"
-                      />
-                      <div>
-                        <div className="font-medium">{crypto.name}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {crypto.symbol.toUpperCase()}
+                  <tr
+                      key={crypto.id}
+                      className="border-b border-border hover:bg-muted/50 transition-colors"
+                  >
+                    <td className="py-4 px-4">
+                      <Link
+                          to={`/crypto/${crypto.id}`}
+                          className="flex items-center gap-3 hover:text-primary"
+                      >
+                        <img
+                            src={crypto.image}
+                            alt={crypto.name}
+                            className="w-8 h-8"
+                        />
+                        <div>
+                          <div className="font-medium">{crypto.name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {crypto.symbol.toUpperCase()}
+                          </div>
                         </div>
+                      </Link>
+                    </td>
+                    <td className="text-right py-4 px-4">
+                      <div className="font-medium">
+                        ${crypto.current_price.toLocaleString()}
                       </div>
-                    </Link>
-                  </td>
-                  <td className="text-right py-4 px-4">
-                    <div className="font-medium">
-                      ${crypto.current_price.toLocaleString()}
-                    </div>
-                  </td>
-                  <td className="text-right py-4 px-4">
-                    <div
-                      className={`flex items-center justify-end gap-1 ${
-                        crypto.price_change_percentage_24h >= 0
-                          ? 'text-green-500'
-                          : 'text-red-500'
-                      }`}
-                    >
-                      {crypto.price_change_percentage_24h >= 0 ? (
-                        <ArrowUpRight className="h-4 w-4" />
-                      ) : (
-                        <ArrowDownRight className="h-4 w-4" />
-                      )}
-                      {Math.abs(crypto.price_change_percentage_24h).toFixed(2)}%
-                    </div>
-                  </td>
-                </tr>
+                    </td>
+                    <td className="text-right py-4 px-4">
+                      <div
+                          className={`flex items-center justify-end gap-1 ${
+                              crypto.price_change_percentage_24h >= 0
+                                  ? 'text-green-500'
+                                  : 'text-red-500'
+                          }`}
+                      >
+                        {crypto.price_change_percentage_24h >= 0 ? (
+                            <ArrowUpRight className="h-4 w-4"/>
+                        ) : (
+                            <ArrowDownRight className="h-4 w-4"/>
+                        )}
+                        {Math.abs(crypto.price_change_percentage_24h).toFixed(2)}%
+                      </div>
+                    </td>
+                  </tr>
               ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </div>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
   );
 }
