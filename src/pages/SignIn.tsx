@@ -42,7 +42,7 @@ export default function SignIn() {
   };
 
   return (
-      <div className="container flex items-center justify-center min-h-[calc(100vh-4rem)] py-8">
+      <div className="flex items-center justify-center min-h-screen px-4 ">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Connexion</CardTitle>
