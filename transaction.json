@@ -48,6 +48,23 @@
             "amount": 19000,
             "date": "2025-01-09T16:01:16.333521",
             "iban": "FR7630006000011234567890189"
+        },
+        {
+            "id": "ea9fad9e",
+            "type": "send",
+            "amount": 1.0,
+            "crypto": "bitcoin",
+            "date": "2025-01-10T16:14:33.638782",
+            "destination_iban": "CX1250323897011263170785"
+        }
+    ],
+    "azerty@azerty.fr": [
+        {
+            "id": "d8197e70",
+            "type": "deposit",
+            "amount": 1000,
+            "date": "2025-01-10T15:57:31.658427",
+            "iban": null
         }
     ]
 }

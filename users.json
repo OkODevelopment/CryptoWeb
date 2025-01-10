@@ -3,14 +3,14 @@
         "email": "test@test.fr",
         "password": "test",
         "pseudo": "Test",
-        "iban": "FR2140488305421777918918",
-        "balance": 1009016216
+        "iban": "CX2140488305421777918918",
+        "balance": 1008521205.5500003
     },
     {
         "email": "azerty@azerty.fr",
         "password": "azerty",
         "pseudo": "Azerty",
-        "iban": "FR1250323897011263170785",
-        "balance": 0
+        "iban": "CX1250323897011263170785",
+        "balance": 999.906093
     }
 ]
