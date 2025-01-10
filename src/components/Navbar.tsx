@@ -52,10 +52,10 @@ export default function Navbar() {
               </Link>
             </NavigationMenuItem>
             <NavigationMenuItem>
-              <Link to="/trading">
+              <Link to="/invest">
                 <Button variant="ghost" className="flex items-center gap-2">
                   <LineChart className="h-4 w-4" />
-                  Trading
+                  Invest
                 </Button>
               </Link>
             </NavigationMenuItem>
