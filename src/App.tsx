@@ -21,9 +21,9 @@ export default function App() {
           <Navbar />
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/trading" element={<Trading />} />
+            <Route path="/invest" element={<Trading />} />
             <Route path="/crypto/:id" element={<CryptoDetails />} />
-            <Route path="/trading/:id" element={<TradingDetails />} />
+            <Route path="/invest/:id" element={<TradingDetails />} />
             <Route path="/account" element={<Account />} />
             <Route path="/signin" element={<SignIn />} />
             <Route path="/signup" element={<SignUp />} />
