@@ -1,0 +1,10 @@
+{
+    "test@test.fr": {
+        "ethereum": 3.0,
+        "bitcoin": 4.0,
+        "ripple": 10.0
+    },
+    "azerty@azerty.fr": {
+        "bitcoin": 1.000001
+    }
+}

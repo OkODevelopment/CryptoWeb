@@ -23,8 +23,10 @@ import {
   CartesianGrid,
 } from 'recharts';
 import { Spinner } from '@/components/ui/Spinner';
-import { ArrowUpRight, ArrowDownRight, Sun, Moon } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Sun, Moon, Edit, Trash2, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 
 interface CryptoData {
   id: string;
@@ -100,6 +102,15 @@ interface Message {
   timestamp: string;
 }
 
+interface Post {
+  id: number;
+  username: string;
+  title: string;
+  content: string;
+  date: string;
+  likes: number;
+}
+
 const CryptoDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [cryptoData, setCryptoData] = useState<CryptoData | null>(null);
@@ -111,16 +122,60 @@ const CryptoDetails: React.FC = () => {
   // État pour gérer la plage de temps sélectionnée pour le graphique
   const [chartRange, setChartRange] = useState<'1' | '7' | '14' | '30' | '90' | '180' | '365'>('30');
 
+  function saveToLocalStorage(key: string, value: any) {
+    localStorage.setItem(key , JSON.stringify(value));
+  }
+
+  function loadFromLocalStorage<T>(key: string, defaultValue: T): T {
+    const stored = localStorage.getItem(key);
+    return stored ? JSON.parse(stored) : defaultValue;
+  }
+  
   // États pour la discussion
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(() => loadFromLocalStorage(`crypto-${id}-messages`, []));
   const [newMessage, setNewMessage] = useState<string>('');
   const [username, setUsername] = useState<string>('');
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(false); // État pour le mode clair/sombre
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => loadFromLocalStorage('isDarkMode', true)); // Mode sombre stocké globalement
 
   // États pour la traduction
   const [translatedDescription, setTranslatedDescription] = useState<string | null>(null);
   const [isTranslating, setIsTranslating] = useState<boolean>(false);
   const [translationError, setTranslationError] = useState<string | null>(null);
+
+  // États pour les posts
+  const [posts, setPosts] = useState<Post[]>(() => loadFromLocalStorage(`crypto-${id}-posts`, []));
+  const [newPostTitle, setNewPostTitle] = useState<string>('');
+  const [newPostContent, setNewPostContent] = useState<string>('');
+  const [sortCriteria, setSortCriteria] = useState<'date' | 'likes'>('date');
+  const [editingPostId, setEditingPostId] = useState<number | null>(null);
+  const [editingPostTitle, setEditingPostTitle] = useState<string>('');
+  const [editingPostContent, setEditingPostContent] = useState<string>('');
+
+  // État pour gérer les posts étendus
+  const [expandedPostIds, setExpandedPostIds] = useState<Set<number>>(() => {
+    const stored = loadFromLocalStorage<number[]>(`crypto-${id}-expandedPosts`, []);
+    return new Set(stored);
+  });
+
+  // Sauvegarder les messages dans le localStorage à chaque changement
+  useEffect(() => {
+    saveToLocalStorage(`crypto-${id}-messages`, messages);
+  }, [messages, id]);
+
+  // Sauvegarder les posts dans le localStorage à chaque changement
+  useEffect(() => {
+    saveToLocalStorage(`crypto-${id}-posts`, posts);
+  }, [posts, id]);
+
+  // Sauvegarder les posts étendus dans le localStorage à chaque changement
+  useEffect(() => {
+    saveToLocalStorage(`crypto-${id}-expandedPosts`, Array.from(expandedPostIds));
+  }, [expandedPostIds, id]);
+
+  // Sauvegarder le mode sombre globalement
+  useEffect(() => {
+    saveToLocalStorage('isDarkMode', isDarkMode);
+  }, [isDarkMode]);
 
   // Récupération des données de la crypto
   useEffect(() => {
@@ -188,19 +243,6 @@ const CryptoDetails: React.FC = () => {
     fetchChartData();
   }, [id, chartRange]);
 
-  // Charger les messages depuis le localStorage au montage
-  useEffect(() => {
-    const storedMessages = localStorage.getItem(`crypto-${id}-messages`);
-    if (storedMessages) {
-      setMessages(JSON.parse(storedMessages));
-    }
-  }, [id]);
-
-  // Sauvegarder les messages dans le localStorage à chaque changement
-  useEffect(() => {
-    localStorage.setItem(`crypto-${id}-messages`, JSON.stringify(messages));
-  }, [messages, id]);
-
   // Fonction pour ajouter un nouveau message
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -220,6 +262,128 @@ const CryptoDetails: React.FC = () => {
   // Fonction pour basculer le mode clair/sombre
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
+  };
+
+  // Fonction pour traduire la description en français
+  const translateDescription = async () => {
+    if (!cryptoData || !cryptoData.description.en) return;
+    setIsTranslating(true);
+    setTranslationError(null);
+    try {
+      const response = await axios.post('https://libretranslate.de/translate', {
+        q: cryptoData.description.en,
+        source: 'en',
+        target: 'fr',
+        format: 'text',
+      }, {
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      setTranslatedDescription(response.data.translatedText);
+    } catch (err) {
+      console.error('Erreur lors de la traduction de la description.', err);
+      setTranslationError('Erreur lors de la traduction de la description.');
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
+  // Fonctions pour gérer les posts
+  const addPost = () => {
+    if (newPostTitle.trim() === '' || newPostContent.trim() === '' || username.trim() === '') return;
+
+    const newPost: Post = {
+      id: Date.now(),
+      username: username.trim(),
+      title: newPostTitle.trim(),
+      content: newPostContent.trim(),
+      date: new Date().toLocaleString(),
+      likes: 0,
+    };
+
+    setPosts([newPost, ...posts]);
+    setNewPostTitle('');
+    setNewPostContent('');
+  };
+
+  const deletePost = (postId: number) => {
+    if (!username.trim()) return;
+    const post = posts.find(p => p.id === postId);
+    if (post && post.username === username.trim()) {
+      if (window.confirm('Êtes-vous sûr de vouloir supprimer ce post ?')) {
+        setPosts(posts.filter(p => p.id !== postId));
+        setExpandedPostIds(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(postId);
+          return newSet;
+        });
+      }
+    } else {
+      alert('Vous ne pouvez supprimer que vos propres posts.');
+    }
+  };
+
+  const likePost = (postId: number) => {
+    setPosts(posts.map(post => {
+      if (post.id === postId) {
+        return { ...post, likes: post.likes + 1 };
+      }
+      return post;
+    }));
+  };
+
+  const startEditingPost = (post: Post) => {
+    if (!username.trim()) return;
+    if (post.username !== username.trim()) {
+      alert('Vous ne pouvez modifier que vos propres posts.');
+      return;
+    }
+    setEditingPostId(post.id);
+    setEditingPostTitle(post.title);
+    setEditingPostContent(post.content);
+  };
+
+  const saveEditedPost = (postId: number) => {
+    if (editingPostTitle.trim() === '' || editingPostContent.trim() === '') return;
+
+    setPosts(posts.map(post => {
+      if (post.id === postId) {
+        return { ...post, title: editingPostTitle.trim(), content: editingPostContent.trim() };
+      }
+      return post;
+    }));
+    setEditingPostId(null);
+    setEditingPostTitle('');
+    setEditingPostContent('');
+  };
+
+  const cancelEditingPost = () => {
+    setEditingPostId(null);
+    setEditingPostTitle('');
+    setEditingPostContent('');
+  };
+
+  // Fonction pour trier les posts
+  const sortedPosts = [...posts].sort((a, b) => {
+    if (sortCriteria === 'date') {
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    } else if (sortCriteria === 'likes') {
+      return b.likes - a.likes;
+    }
+    return 0;
+  });
+
+  // Fonction pour gérer l'expansion/réduction des posts
+  const togglePostExpansion = (postId: number) => {
+    setExpandedPostIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(postId)) {
+        newSet.delete(postId);
+      } else {
+        newSet.add(postId);
+      }
+      return newSet;
+    });
   };
 
   if (loading) {
@@ -423,8 +587,30 @@ const CryptoDetails: React.FC = () => {
                 <TabsContent value="fundamentals" className="space-y-4">
                   <div>
                     <h4 className="text-lg font-semibold mb-2">Description</h4>
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Button
+                        variant="outline"
+                        onClick={translateDescription}
+                        disabled={isTranslating || translatedDescription !== null}
+                      >
+                        {isTranslating ? 'Traduction...' : 'Traduire en Français'}
+                      </Button>
+                      {translatedDescription && (
+                        <Button
+                          variant="ghost"
+                          onClick={() => setTranslatedDescription(null)}
+                        >
+                          Réinitialiser
+                        </Button>
+                      )}
+                    </div>
+                    {translationError && (
+                      <p className="text-red-500">{translationError}</p>
+                    )}
                     <p className="text-gray-700 whitespace-pre-line">
-                      {cryptoData.description.en
+                      {translatedDescription
+                        ? translatedDescription
+                        : cryptoData.description.en
                           ? cryptoData.description.en
                           : 'Aucune description disponible.'}
                     </p>
@@ -537,7 +723,7 @@ const CryptoDetails: React.FC = () => {
 
             {/* Formulaire pour envoyer un nouveau message */}
             <form onSubmit={handleSendMessage} className="flex flex-col space-y-2">
-              <input
+              <Input
                 type="text"
                 placeholder="Votre nom"
                 value={username}
@@ -549,7 +735,7 @@ const CryptoDetails: React.FC = () => {
                 }`}
                 required
               />
-              <textarea
+              <Textarea
                 placeholder="Votre message"
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
@@ -560,11 +746,196 @@ const CryptoDetails: React.FC = () => {
                 }`}
                 rows={3}
                 required
-              ></textarea>
+              ></Textarea>
               <Button type="submit" variant="default" className="self-end">
                 Envoyer
               </Button>
             </form>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Section Posts */}
+      <div className="mt-12">
+        <Card>
+          <CardHeader className="flex justify-between items-center">
+            <CardTitle>Posts sur {cryptoData.name}</CardTitle>
+            <div className="flex items-center space-x-2">
+              <select
+                value={sortCriteria}
+                onChange={(e) => setSortCriteria(e.target.value as 'date' | 'likes')}
+                className={`px-2 py-1 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  isDarkMode
+                    ? 'bg-gray-800 text-white'
+                    : 'bg-white text-black'
+                }`}
+              >
+                <option value="date">Trier par Date</option>
+                <option value="likes">Trier par Pertinence</option>
+              </select>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Formulaire pour ajouter un nouveau post */}
+            <div className="flex flex-col space-y-2">
+              <Input
+                type="text"
+                placeholder="Titre du post"
+                value={newPostTitle}
+                onChange={(e) => setNewPostTitle(e.target.value)}
+                className={`px-4 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  isDarkMode
+                    ? 'bg-gray-800 text-white placeholder-gray-400'
+                    : 'bg-white text-black placeholder-gray-500'
+                }`}
+                required
+              />
+              <Textarea
+                placeholder="Contenu du post"
+                value={newPostContent}
+                onChange={(e) => setNewPostContent(e.target.value)}
+                className={`px-4 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none ${
+                  isDarkMode
+                    ? 'bg-gray-800 text-white placeholder-gray-400'
+                    : 'bg-white text-black placeholder-gray-500'
+                }`}
+                rows={3}
+                required
+              ></Textarea>
+              <span className="text-xs">
+                <i>
+                  *Pour que vous puissiez poster, il vous faut entrer votre nom dans le champ ci-dessus.
+                </i>
+              </span>
+              <Button
+                onClick={addPost}
+                variant="default"
+                disabled={newPostTitle.trim() === '' || newPostContent.trim() === '' || username.trim() === ''}
+                className="self-end"
+              >
+                Publier
+              </Button>
+            </div>
+
+            {/* Liste des posts */}
+            <div className="space-y-4">
+              {sortedPosts.length === 0 ? (
+                <p className="text-gray-500">Aucun post pour l'instant. Soyez le premier à publier !</p>
+              ) : (
+                sortedPosts.map((post) => (
+                  <Card key={post.id} className={`border ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-border'}`}>
+                    <CardHeader className="flex justify-between items-center">
+                      <div>
+                        {/* Titre cliquable pour étendre/réduire le contenu */}
+                        <h5
+                          className="text-lg font-semibold cursor-pointer flex items-center"
+                          onClick={() => togglePostExpansion(post.id)}
+                        >
+                          {post.title}
+                          {/* Icône indiquant l'état d'expansion */}
+                          <span className="ml-2">
+                            {expandedPostIds.has(post.id) ? (
+                              <ArrowUpRight className="h-4 w-4 transform rotate-45 transition-transform duration-300" />
+                            ) : (
+                              <ArrowUpRight className="h-4 w-4 transition-transform duration-300" />
+                            )}
+                          </span>
+                        </h5>
+                        <p className="text-sm text-gray-500">Posté par {post.username} le {post.date}</p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="ghost"
+                          onClick={() => likePost(post.id)}
+                          aria-label="Like Post"
+                          className="flex items-center space-x-1 text-red-500"
+                        >
+                          <Heart className="h-4 w-4" />
+                          <span>{post.likes}</span>
+                        </Button>
+                        {post.username === username.trim() && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              onClick={() => startEditingPost(post)}
+                              aria-label="Edit Post"
+                              className="text-yellow-500"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              onClick={() => deletePost(post.id)}
+                              aria-label="Delete Post"
+                              className="text-red-500"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </CardHeader>
+                    {/* Contenu du post avec animation */}
+                    <CardContent>
+                      <div
+                        className={`overflow-hidden transition-max-height duration-500 ease-in-out ${
+                          expandedPostIds.has(post.id) ? 'max-h-96' : 'max-h-0'
+                        }`}
+                      >
+                        {editingPostId === post.id ? (
+                          <div className="flex flex-col space-y-2">
+                            <Input
+                              type="text"
+                              placeholder="Titre du post"
+                              value={editingPostTitle}
+                              onChange={(e) => setEditingPostTitle(e.target.value)}
+                              className={`px-4 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                isDarkMode
+                                  ? 'bg-gray-800 text-white placeholder-gray-400'
+                                  : 'bg-white text-black placeholder-gray-500'
+                              }`}
+                              required
+                            />
+                            <Textarea
+                              placeholder="Contenu du post"
+                              value={editingPostContent}
+                              onChange={(e) => setEditingPostContent(e.target.value)}
+                              className={`px-4 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none ${
+                                isDarkMode
+                                  ? 'bg-gray-800 text-white placeholder-gray-400'
+                                  : 'bg-white text-black placeholder-gray-500'
+                              }`}
+                              rows={3}
+                              required
+                            ></Textarea>
+                            <div className="flex space-x-2">
+                              <Button
+                                onClick={() => saveEditedPost(post.id)}
+                                variant="default"
+                                disabled={editingPostTitle.trim() === '' || editingPostContent.trim() === ''}
+                              >
+                                Sauvegarder
+                              </Button>
+                              <Button
+                                onClick={cancelEditingPost}
+                                variant="ghost"
+                                className="text-gray-500"
+                              >
+                                Annuler
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className={`text-gray-700 whitespace-pre-line ${isDarkMode ? 'text-gray-300' : ''}`}>
+                            {post.content}
+                          </p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>

@@ -35,7 +35,7 @@ export function SortDropdown({ onSort }: { onSort: (sortBy: { id: string; desc: 
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="outline">Trier</Button>
+                <Button variant="outline" size="sm">Trier</Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
                 <DropdownMenuItem onClick={() => onSort({ id: "date", desc: true })}>
@@ -61,16 +61,20 @@ export function TransactionTable({ transactions }: { transactions: Transaction[]
     const columns: ColumnDef<Transaction>[] = [
         {
             accessorKey: "id",
-            header: "Transaction ID",
+            header: "ID",
             cell: ({ row }) => (
-                <div className="text-sm text-left font-mono">{row.getValue("id")}</div>
+                <div className="text-xs font-mono truncate max-w-[100px] lg:max-w-none">
+                    {row.getValue("id")}
+                </div>
             ),
         },
         {
             accessorKey: "type",
             header: "Type",
             cell: ({ row }) => (
-                <div className="capitalize text-left">{row.getValue("type")}</div>
+                <div className="capitalize whitespace-nowrap">
+                    {row.getValue("type")}
+                </div>
             ),
         },
         {
@@ -83,14 +87,20 @@ export function TransactionTable({ transactions }: { transactions: Transaction[]
                     currency: "EUR",
                 }).format(amount);
 
-                return <div className="text-right font-medium">{formatted}</div>;
+                return (
+                    <div className="text-right font-medium whitespace-nowrap">
+                        {formatted}
+                    </div>
+                );
             },
         },
         {
             accessorKey: "iban",
             header: "IBAN",
             cell: ({ row }) => (
-                <div className="text-sm text-left">{row.getValue("iban") || "-"}</div>
+                <div className="text-xs truncate max-w-[150px] lg:max-w-none">
+                    {row.getValue("iban") || "-"}
+                </div>
             ),
         },
         {
@@ -98,7 +108,11 @@ export function TransactionTable({ transactions }: { transactions: Transaction[]
             header: "Date",
             cell: ({ row }) => {
                 const date = new Date(row.getValue("date"));
-                return <div className="text-left">{date.toLocaleString()}</div>;
+                return (
+                    <div className="whitespace-nowrap">
+                        {date.toLocaleString()}
+                    </div>
+                );
             },
         },
     ];
@@ -115,24 +129,24 @@ export function TransactionTable({ transactions }: { transactions: Transaction[]
     });
 
     return (
-        <div className="w-full">
+        <div className="w-full max-w-[1400px] mx-auto">
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold">Historique des transactions</h2>
                 <SortDropdown onSort={(sortBy) => setSorting([sortBy])} />
             </div>
-            <div className="rounded-md border">
-                <Table className="w-full table-auto">
+            <div className="rounded-md border overflow-x-auto">
+                <Table className="min-w-full">
                     <TableHeader>
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id}>
                                 {headerGroup.headers.map((header) => (
                                     <TableHead
                                         key={header.id}
-                                        className={
+                                        className={`${
                                             header.column.id === "amount"
-                                                ? "text-right px-10"
-                                                : "text-left px-10"
-                                        }
+                                                ? "text-right"
+                                                : "text-left"
+                                        } px-6 py-4`}
                                     >
                                         {header.isPlaceholder
                                             ? null
@@ -149,11 +163,11 @@ export function TransactionTable({ transactions }: { transactions: Transaction[]
                                     {row.getVisibleCells().map((cell) => (
                                         <TableCell
                                             key={cell.id}
-                                            className={
+                                            className={`${
                                                 cell.column.id === "amount"
-                                                    ? "text-right px-10"
-                                                    : "text-left px-10"
-                                            }
+                                                    ? "text-right"
+                                                    : "text-left"
+                                            } px-6 py-4`}
                                         >
                                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                         </TableCell>
