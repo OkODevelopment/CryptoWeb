@@ -23,13 +23,23 @@ import {
   CartesianGrid,
 } from 'recharts';
 import { Spinner } from '@/components/ui/Spinner';
-import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface CryptoData {
   id: string;
   symbol: string;
   name: string;
+  description: {
+    en: string;
+  };
+  links: {
+    homepage: string[];
+    blockchain_site: string[];
+    official_forum_url: string[];
+    subreddit_url: string;
+    chat_url: string;
+  };
   image: {
     thumb: string;
     small: string;
@@ -48,10 +58,46 @@ interface CryptoData {
     price_change_percentage_24h: number;
     market_cap_rank: number;
   };
+  tickers: {
+    market: {
+      name: string;
+      identifier: string;
+      has_trading_incentive: boolean;
+    };
+    base: string;
+    target: string;
+    market_identifier: string;
+    last: number;
+    volume: number;
+    converted_last: {
+      [key: string]: number;
+    };
+    converted_volume: {
+      [key: string]: number;
+    };
+    trust_score: string;
+    bid_ask_spread_percentage: number;
+    timestamp: string;
+    last_traded_at: string;
+    last_fetch_at: string;
+    is_anomaly: boolean;
+    is_stale: boolean;
+    trade_url: string;
+    token_info_url: string | null;
+    coin_id: string | null;
+    target_coin_id: string | null;
+  }[];
 }
 
 interface MarketChartData {
   prices: [number, number][];
+}
+
+interface Message {
+  id: number;
+  username: string;
+  content: string;
+  timestamp: string;
 }
 
 const CryptoDetails: React.FC = () => {
@@ -63,8 +109,18 @@ const CryptoDetails: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   // État pour gérer la plage de temps sélectionnée pour le graphique
-  // Possibles valeurs de 'days' pour CoinGecko : 1, 7, 14, 30, 90, 180, 365, 'max'
   const [chartRange, setChartRange] = useState<'1' | '7' | '14' | '30' | '90' | '180' | '365'>('30');
+
+  // États pour la discussion
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [newMessage, setNewMessage] = useState<string>('');
+  const [username, setUsername] = useState<string>('');
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(false); // État pour le mode clair/sombre
+
+  // États pour la traduction
+  const [translatedDescription, setTranslatedDescription] = useState<string | null>(null);
+  const [isTranslating, setIsTranslating] = useState<boolean>(false);
+  const [translationError, setTranslationError] = useState<string | null>(null);
 
   // Récupération des données de la crypto
   useEffect(() => {
@@ -77,7 +133,7 @@ const CryptoDetails: React.FC = () => {
           {
             params: {
               localization: false,
-              tickers: false,
+              tickers: true, // Activer les tickers pour les marchés
               market_data: true,
               community_data: false,
               developer_data: false,
@@ -115,7 +171,7 @@ const CryptoDetails: React.FC = () => {
         );
         const formattedData = response.data.prices.map((price) => {
           const date = new Date(price[0]);
-          // Format de date simple (mois/jour) – vous pouvez l'améliorer selon vos besoins
+          // Format de date simple (mois/jour)
           return {
             date: `${date.getMonth() + 1}/${date.getDate()}`,
             price: price[1],
@@ -131,6 +187,40 @@ const CryptoDetails: React.FC = () => {
 
     fetchChartData();
   }, [id, chartRange]);
+
+  // Charger les messages depuis le localStorage au montage
+  useEffect(() => {
+    const storedMessages = localStorage.getItem(`crypto-${id}-messages`);
+    if (storedMessages) {
+      setMessages(JSON.parse(storedMessages));
+    }
+  }, [id]);
+
+  // Sauvegarder les messages dans le localStorage à chaque changement
+  useEffect(() => {
+    localStorage.setItem(`crypto-${id}-messages`, JSON.stringify(messages));
+  }, [messages, id]);
+
+  // Fonction pour ajouter un nouveau message
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newMessage.trim() === '' || username.trim() === '') return;
+
+    const message: Message = {
+      id: Date.now(),
+      username: username.trim(),
+      content: newMessage.trim(),
+      timestamp: new Date().toLocaleString(),
+    };
+
+    setMessages([...messages, message]);
+    setNewMessage('');
+  };
+
+  // Fonction pour basculer le mode clair/sombre
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode);
+  };
 
   if (loading) {
     return (
@@ -167,42 +257,49 @@ const CryptoDetails: React.FC = () => {
                 <Button
                   variant={chartRange === '1' ? 'default' : 'outline'}
                   onClick={() => setChartRange('1')}
+                  size="sm"
                 >
                   1J
                 </Button>
                 <Button
                   variant={chartRange === '7' ? 'default' : 'outline'}
                   onClick={() => setChartRange('7')}
+                  size="sm"
                 >
                   7J
                 </Button>
                 <Button
                   variant={chartRange === '14' ? 'default' : 'outline'}
                   onClick={() => setChartRange('14')}
+                  size="sm"
                 >
                   14J
                 </Button>
                 <Button
                   variant={chartRange === '30' ? 'default' : 'outline'}
                   onClick={() => setChartRange('30')}
+                  size="sm"
                 >
                   30J
                 </Button>
                 <Button
                   variant={chartRange === '90' ? 'default' : 'outline'}
                   onClick={() => setChartRange('90')}
+                  size="sm"
                 >
                   90J
                 </Button>
                 <Button
                   variant={chartRange === '180' ? 'default' : 'outline'}
                   onClick={() => setChartRange('180')}
+                  size="sm"
                 >
                   180J
                 </Button>
                 <Button
                   variant={chartRange === '365' ? 'default' : 'outline'}
                   onClick={() => setChartRange('365')}
+                  size="sm"
                 >
                   1an
                 </Button>
@@ -277,7 +374,103 @@ const CryptoDetails: React.FC = () => {
                     </div>
                   </div>
                 </TabsContent>
-                {/* Vous pouvez ajouter des contenus pour "markets" et "fundamentals" ici */}
+                <TabsContent value="markets" className="space-y-4">
+                  <div>
+                    <h4 className="text-lg font-semibold mb-2">Principaux Marchés</h4>
+                    <div className="overflow-x-auto">
+                      <table
+                        className={`min-w-full divide-y divide-border rounded-lg overflow-hidden ${
+                          isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'
+                        }`}
+                      >
+                        <thead>
+                          <tr>
+                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Exchange</th>
+                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Paire</th>
+                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Dernier Prix</th>
+                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Volume 24h</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border">
+                          {cryptoData.tickers.slice(0, 10).map((ticker, index) => (
+                            <tr key={index}>
+                              <td className="px-4 py-2 whitespace-nowrap text-sm">{ticker.market.name}</td>
+                              <td className="px-4 py-2 whitespace-nowrap text-sm">
+                                {ticker.base}/{ticker.target}
+                              </td>
+                              <td className="px-4 py-2 whitespace-nowrap text-sm">
+                                ${ticker.last.toLocaleString()}
+                              </td>
+                              <td className="px-4 py-2 whitespace-nowrap text-sm">
+                                ${ticker.volume.toLocaleString()}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    {cryptoData.tickers.length > 10 && (
+                      <p className="text-sm text-gray-500 mt-2">
+                        Affichage des 10 premiers marchés. Voir plus sur{' '}
+                        <a href="https://www.coingecko.com/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                          CoinGecko
+                        </a>
+                        .
+                      </p>
+                    )}
+                  </div>
+                </TabsContent>
+                <TabsContent value="fundamentals" className="space-y-4">
+                  <div>
+                    <h4 className="text-lg font-semibold mb-2">Description</h4>
+                    <p className="text-gray-700 whitespace-pre-line">
+                      {cryptoData.description.en
+                          ? cryptoData.description.en
+                          : 'Aucune description disponible.'}
+                    </p>
+                  </div>
+                  {/* Section Liens Officiels */}
+                  <div>
+                    <h4 className="text-lg font-semibold mb-2">Liens Officiels</h4>
+                    <ul className="list-disc list-inside text-gray-700 space-y-1">
+                      {cryptoData.links.homepage[0] && (
+                        <li>
+                          <a href={cryptoData.links.homepage[0]} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                            Site Officiel
+                          </a>
+                        </li>
+                      )}
+                      {cryptoData.links.blockchain_site[0] && (
+                        <li>
+                          <a href={cryptoData.links.blockchain_site[0]} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                            Blockchain Explorer
+                          </a>
+                        </li>
+                      )}
+                      {cryptoData.links.official_forum_url[0] && (
+                        <li>
+                          <a href={cryptoData.links.official_forum_url[0]} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                            Forum Officiel
+                          </a>
+                        </li>
+                      )}
+                      {cryptoData.links.subreddit_url && (
+                        <li>
+                          <a href={cryptoData.links.subreddit_url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                            Subreddit
+                          </a>
+                        </li>
+                      )}
+                      {cryptoData.links.chat_url && (
+                        <li>
+                          <a href={cryptoData.links.chat_url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                            Chat
+                          </a>
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                </TabsContent>
               </Tabs>
             </CardContent>
           </Card>
@@ -305,6 +498,73 @@ const CryptoDetails: React.FC = () => {
                 ${cryptoData.market_data.total_volume.usd.toLocaleString()}
               </span>
             </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Section Discussion */}
+      <div className="mt-12">
+        <Card>
+          <CardHeader className="flex justify-between items-center">
+            <CardTitle>Discussion sur {cryptoData.name}</CardTitle>
+            <Button
+              variant="ghost"
+              onClick={toggleDarkMode}
+              aria-label="Toggle Dark Mode"
+              className="flex items-center gap-2"
+            >
+              {isDarkMode ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+              {isDarkMode ? 'Sombre' : 'Clair'}
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Liste des messages */}
+            <div className="max-h-80 overflow-y-auto space-y-4">
+              {messages.length === 0 ? (
+                <p className="text-gray-500">Aucun message pour l'instant. Soyez le premier à discuter !</p>
+              ) : (
+                messages.map((msg) => (
+                  <div key={msg.id} className="border-b border-border pb-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-semibold">{msg.username}</span>
+                      <span className="text-xs text-gray-400">{msg.timestamp}</span>
+                    </div>
+                    <p className={`mt-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{msg.content}</p>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Formulaire pour envoyer un nouveau message */}
+            <form onSubmit={handleSendMessage} className="flex flex-col space-y-2">
+              <input
+                type="text"
+                placeholder="Votre nom"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className={`px-4 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  isDarkMode
+                    ? 'bg-gray-800 text-white placeholder-gray-400'
+                    : 'bg-white text-black placeholder-gray-500'
+                }`}
+                required
+              />
+              <textarea
+                placeholder="Votre message"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                className={`px-4 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none ${
+                  isDarkMode
+                    ? 'bg-gray-800 text-white placeholder-gray-400'
+                    : 'bg-white text-black placeholder-gray-500'
+                }`}
+                rows={3}
+                required
+              ></textarea>
+              <Button type="submit" variant="default" className="self-end">
+                Envoyer
+              </Button>
+            </form>
           </CardContent>
         </Card>
       </div>
