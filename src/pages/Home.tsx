@@ -1,36 +1,149 @@
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowRight, TrendingUp, Shield, Zap, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import {
+  ArrowRight,
+  TrendingUp,
+  Shield,
+  Zap,
+  ArrowUpRight,
+  ArrowDownRight,
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const cryptos = [
-  { id: 'bitcoin', name: 'Bitcoin', symbol: 'BTC', price: 45123.45, change: 2.5 },
-  { id: 'ethereum', name: 'Ethereum', symbol: 'ETH', price: 2456.78, change: -1.2 },
-  { id: 'binancecoin', name: 'BNB', symbol: 'BNB', price: 312.45, change: 0.8 },
-  { id: 'solana', name: 'Solana', symbol: 'SOL', price: 98.76, change: 5.4 },
-  { id: 'cardano', name: 'Cardano', symbol: 'ADA', price: 1.23, change: -0.5 },
-  { id: 'ripple', name: 'XRP', symbol: 'XRP', price: 0.54, change: 1.7 },
-  { id: 'polkadot', name: 'Polkadot', symbol: 'DOT', price: 15.67, change: -2.1 },
-  { id: 'dogecoin', name: 'Dogecoin', symbol: 'DOGE', price: 0.12, change: 3.2 },
-  { id: 'avalanche', name: 'Avalanche', symbol: 'AVAX', price: 34.56, change: 4.3 },
-  { id: 'chainlink', name: 'Chainlink', symbol: 'LINK', price: 14.32, change: 1.9 },
-];
+type Crypto = {
+  id: string;
+  name: string;
+  symbol: string;
+  current_price: number;
+  price_change_percentage_24h: number;
+  image: string;
+};
 
 export default function Home() {
+  const [cryptos, setCryptos] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Position réelle de la souris
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  // Position animée pour le cercle
+  const [animatedPosition, setAnimatedPosition] = useState({ x: 0, y: 0 });
+
+  // -------------------------------
+  // 1. Définir une clé pour le localStorage
+  // -------------------------------
+  const LOCAL_STORAGE_KEY = 'cryptos_data';
+  // (facultatif) Durée de vie du cache : 5 minutes, par exemple
+  const CACHE_DURATION = 1 * 60 * 1000; // 5 minutes en ms
+
+  useEffect(() => {
+    const handleMouseMove = (event: MouseEvent) => {
+      setMousePosition({ x: event.clientX, y: event.clientY });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, []);
+
+  useEffect(() => {
+    // Animation de suivi (smooth follow)
+    const smoothFollow = () => {
+      setAnimatedPosition((prev) => ({
+        x: prev.x + (mousePosition.x - prev.x) * 0.2,
+        y: prev.y + (mousePosition.y - prev.y) * 0.2,
+      }));
+    };
+    const animationFrame = requestAnimationFrame(smoothFollow);
+    return () => cancelAnimationFrame(animationFrame);
+  }, [mousePosition]);
+
+  useEffect(() => {
+    // -------------------------------
+    // 2. Vérifier si des données sont en cache
+    // -------------------------------
+    const fetchCryptos = async () => {
+      try {
+        const storedValue = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (storedValue) {
+          const { data, timestamp } = JSON.parse(storedValue);
+          if (Date.now() - timestamp < CACHE_DURATION) {
+            console.log('Données chargées depuis le cache localStorage:', data);
+            setCryptos(data);
+            setIsLoading(false);
+            return;
+          }
+        }
+    
+        console.log('Appel à l\'API pour mettre à jour les données...');
+        const response = await fetch(
+          'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=10&page=1&sparkline=false'
+        );
+        if (!response.ok) {
+          throw new Error('Échec de récupération des données');
+        }
+        const data = await response.json();
+        console.log('Données mises à jour depuis l\'API:', data);
+        setCryptos(data);
+    
+        localStorage.setItem(
+          LOCAL_STORAGE_KEY,
+          JSON.stringify({ data, timestamp: Date.now() })
+        );
+      } catch (err: any) {
+        console.error('Erreur lors de la récupération des données:', err.message);
+        setError(err.message || 'Une erreur est survenue');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCryptos();
+  }, []);
+
+  if (isLoading) {
+    return <div className="text-center py-12">Chargement des données...</div>;
+  }
+
+  if (error) {
+    return <div className="text-center py-12 text-red-500">Erreur : {error}</div>;
+  }
+
+
   return (
     <div className="flex flex-col min-h-screen">
-      <section className="py-12 text-center px-4">
+      <div
+        className="pointer-events-none fixed w-12 h-12 bg-white rounded-full blur-lg opacity-40"
+        style={{
+          transform: `translate(${animatedPosition.x - 24}px, ${
+            animatedPosition.y - 80
+          }px)`,
+          transition: 'transform 0.05s linear',
+        }}
+      ></div>
+
+      {/* Section d'introduction */}
+      <section className="py-12 text-center px-4 relative">
+        {/* Effet de rond blanc flou */}
+        <div className="absolute inset-0 flex justify-center items-center -z-2">
+          <div className="w-96 h-96 bg-white rounded-full blur-3xl opacity-20"></div>
+        </div>
         <h1 className="text-4xl font-bold mb-4">
           La plateforme de trading crypto la plus fiable
         </h1>
         <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
-          Achetez, vendez et échangez des cryptomonnaies en toute sécurité. Rejoignez des millions d'utilisateurs qui nous font confiance.
+          Achetez, vendez et échangez des cryptomonnaies en toute sécurité. Rejoignez des millions d'utilisateurs qui
+          nous font confiance.
         </p>
         <Button size="lg" className="gap-2">
           Commencer maintenant <ArrowRight className="h-4 w-4" />
         </Button>
       </section>
 
+      {/* Section des avantages */}
       <section className="container grid md:grid-cols-3 gap-6 py-12">
         <Card>
           <CardContent className="pt-6">
@@ -61,60 +174,135 @@ export default function Home() {
         </Card>
       </section>
 
+      {/* Section des cryptomonnaies */}
       <section className="container py-12">
         <h2 className="text-2xl font-bold mb-6">Marché des cryptomonnaies</h2>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
+=======
+      <div className="flex flex-col min-h-screen">
+        <div
+            className="pointer-events-none fixed w-12 h-12 bg-white rounded-full blur-lg opacity-40"
+            style={{
+              transform: `translate(${animatedPosition.x - 24}px, ${animatedPosition.y - 80}px)`, // Ajuste la hauteur (-28 au lieu de -24)
+              transition: 'transform 0.05s linear', // Adoucit les mouvements
+            }}
+        ></div>
+
+        {/* Section d'introduction */}
+        <section className="py-12 text-center px-4 relative">
+          {/* Effet de rond blanc flou */}
+          <div className="absolute inset-0 flex justify-center items-center -z-2">
+            <div className="w-96 h-96 bg-white rounded-full blur-3xl opacity-20"></div>
+          </div>
+          <h1 className="text-4xl font-bold mb-4">
+            La plateforme de trading crypto la plus fiable
+          </h1>
+          <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
+            Achetez, vendez et échangez des cryptomonnaies en toute sécurité. Rejoignez des millions d'utilisateurs qui
+            nous font confiance.
+          </p>
+          <Button size="lg" className="gap-2">
+            Commencer maintenant <ArrowRight className="h-4 w-4"/>
+          </Button>
+        </section>
+
+
+        {/* Section des avantages */}
+        <section className="container grid md:grid-cols-3 gap-6 py-12">
+          <Card>
+            <CardContent className="pt-6">
+              <TrendingUp className="h-12 w-12 mb-4"/>
+              <h3 className="text-lg font-semibold mb-2">Trading avancé</h3>
+              <p className="text-muted-foreground">
+                Outils professionnels et graphiques en temps réel
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <Shield className="h-12 w-12 mb-4"/>
+              <h3 className="text-lg font-semibold mb-2">Sécurité maximale</h3>
+              <p className="text-muted-foreground">
+                Protection de vos actifs avec une sécurité de niveau institutionnel
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <Zap className="h-12 w-12 mb-4"/>
+              <h3 className="text-lg font-semibold mb-2">Exécution rapide</h3>
+              <p className="text-muted-foreground">
+                Transactions instantanées et support 24/7
+              </p>
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* Section des cryptomonnaies */}
+        <section className="container py-12">
+          <h2 className="text-2xl font-bold mb-6">Marché des cryptomonnaies</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
               <tr className="border-b border-border">
                 <th className="text-left py-4 px-4">Crypto</th>
                 <th className="text-right py-4 px-4">Prix</th>
                 <th className="text-right py-4 px-4">24h %</th>
               </tr>
-            </thead>
-            <tbody>
+              </thead>
+              <tbody>
               {cryptos.map((crypto) => (
-                <tr 
-                  key={crypto.id}
-                  className="border-b border-border hover:bg-muted/50 transition-colors"
-                >
-                  <td className="py-4 px-4">
-                    <Link 
-                      to={`/crypto/${crypto.id}`}
-                      className="flex items-center gap-3 hover:text-primary"
-                    >
-                      <img
-                        src={`https://cryptologos.cc/logos/${crypto.id}-${crypto.symbol.toLowerCase()}-logo.png`}
-                        alt={crypto.name}
-                        className="w-8 h-8"
-                      />
-                      <div>
-                        <div className="font-medium">{crypto.name}</div>
-                        <div className="text-sm text-muted-foreground">{crypto.symbol}</div>
+                  <tr
+                      key={crypto.id}
+                      className="border-b border-border hover:bg-muted/50 transition-colors"
+                  >
+                    <td className="py-4 px-4">
+                      <Link
+                          to={`/crypto/${crypto.id}`}
+                          className="flex items-center gap-3 hover:text-primary"
+                      >
+                        <img
+                            src={crypto.image}
+                            alt={crypto.name}
+                            className="w-8 h-8"
+                        />
+                        <div>
+                          <div className="font-medium">{crypto.name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {crypto.symbol.toUpperCase()}
+                          </div>
+                        </div>
+                      </Link>
+                    </td>
+                    <td className="text-right py-4 px-4">
+                      <div className="font-medium">
+                        ${crypto.current_price.toLocaleString()}
                       </div>
-                    </Link>
-                  </td>
-                  <td className="text-right py-4 px-4">
-                    <div className="font-medium">${crypto.price.toLocaleString()}</div>
-                  </td>
-                  <td className="text-right py-4 px-4">
-                    <div className={`flex items-center justify-end gap-1 ${
-                      crypto.change >= 0 ? 'text-green-500' : 'text-red-500'
-                    }`}>
-                      {crypto.change >= 0 ? (
-                        <ArrowUpRight className="h-4 w-4" />
-                      ) : (
-                        <ArrowDownRight className="h-4 w-4" />
-                      )}
-                      {Math.abs(crypto.change)}%
-                    </div>
-                  </td>
-                </tr>
+                    </td>
+                    <td className="text-right py-4 px-4">
+                      <div
+                          className={`flex items-center justify-end gap-1 ${
+                              crypto.price_change_percentage_24h >= 0
+                                  ? 'text-green-500'
+                                  : 'text-red-500'
+                          }`}
+                      >
+                        {crypto.price_change_percentage_24h >= 0 ? (
+                            <ArrowUpRight className="h-4 w-4"/>
+                        ) : (
+                            <ArrowDownRight className="h-4 w-4"/>
+                        )}
+                        {Math.abs(crypto.price_change_percentage_24h).toFixed(2)}%
+                      </div>
+                    </td>
+                  </tr>
               ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </div>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
   );
 }
