@@ -102,6 +102,7 @@ export default function Home() {
 
   return (
       <div className="flex flex-col min-h-screen">
+        {/* Animation du cercle */}
         <div
             className="pointer-events-none fixed w-12 h-12 bg-white rounded-full blur-lg opacity-40"
             style={{
@@ -117,54 +118,55 @@ export default function Home() {
           <div className="absolute inset-0 flex justify-center items-center -z-2">
             <div className="w-96 h-96 bg-white rounded-full blur-3xl opacity-20"></div>
           </div>
-          <h1 className="text-4xl font-bold mb-4">
+          <h1 className="text-3xl md:text-4xl font-bold mb-4 max-w-3xl mx-auto">
             La plateforme de trading crypto la plus fiable
           </h1>
           <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
             Achetez, vendez et échangez des cryptomonnaies en toute sécurité. Rejoignez des millions d'utilisateurs qui
             nous font confiance.
           </p>
-          <Button size="lg" className="gap-2">
-            Commencer maintenant <ArrowRight className="h-4 w-4" />
+          <Button size="lg" className="gap-2 mx-auto">
+            Commencer maintenant <ArrowRight className="h-4 w-4"/>
           </Button>
         </section>
 
         {/* Section des avantages */}
-        <section className="container grid md:grid-cols-3 gap-6 py-12">
+        <section className="max-w-screen-lg mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 py-12 px-4">
           <Card>
             <CardContent className="pt-6">
-              <TrendingUp className="h-12 w-12 mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Trading avancé</h3>
-              <p className="text-muted-foreground">
+              <TrendingUp className="h-12 w-12 mb-4 mx-auto"/>
+              <h3 className="text-lg font-semibold mb-2 text-center">Trading avancé</h3>
+              <p className="text-muted-foreground text-center">
                 Outils professionnels et graphiques en temps réel
               </p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6">
-              <Shield className="h-12 w-12 mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Sécurité maximale</h3>
-              <p className="text-muted-foreground">
+              <Shield className="h-12 w-12 mb-4 mx-auto"/>
+              <h3 className="text-lg font-semibold mb-2 text-center">Sécurité maximale</h3>
+              <p className="text-muted-foreground text-center">
                 Protection de vos actifs avec une sécurité de niveau institutionnel
               </p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6">
-              <Zap className="h-12 w-12 mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Exécution rapide</h3>
-              <p className="text-muted-foreground">
+              <Zap className="h-12 w-12 mb-4 mx-auto"/>
+              <h3 className="text-lg font-semibold mb-2 text-center">Exécution rapide</h3>
+              <p className="text-muted-foreground text-center">
                 Transactions instantanées et support 24/7
               </p>
             </CardContent>
           </Card>
         </section>
 
+
         {/* Section des cryptomonnaies */}
-        <section className="container py-12">
-          <h2 className="text-2xl font-bold mb-6">Marché des cryptomonnaies</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full">
+        <section className="w-[95%] max-w-[1400px] mx-auto py-12 px-4">
+          <h2 className="text-2xl font-bold mb-6 text-center">Marché des cryptomonnaies</h2>
+          <div>
+            <table className="w-full table-auto">
               <thead>
               <tr className="border-b border-border">
                 <th className="text-left py-4 px-4">Crypto</th>
@@ -210,9 +212,9 @@ export default function Home() {
                           }`}
                       >
                         {crypto.price_change_percentage_24h >= 0 ? (
-                            <ArrowUpRight className="h-4 w-4" />
+                            <ArrowUpRight className="h-4 w-4"/>
                         ) : (
-                            <ArrowDownRight className="h-4 w-4" />
+                            <ArrowDownRight className="h-4 w-4"/>
                         )}
                         {Math.abs(crypto.price_change_percentage_24h).toFixed(2)}%
                       </div>
@@ -223,6 +225,8 @@ export default function Home() {
             </table>
           </div>
         </section>
+
+
       </div>
   );
 }
